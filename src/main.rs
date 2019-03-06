@@ -32,6 +32,7 @@ use std::io::BufRead;
 use std::sync::{Mutex, Arc};
 use std::cmp::Ordering;
 use std::thread;
+use std::path::Path;
 use gnuplot::*;
 use chrono::prelude::*;
 
@@ -47,7 +48,7 @@ Options:
   -o OUTDIR         Plot file name [default: ./]
   --avg=<sec>       Take the average of 'sec' seconds [default: 300]
   -t THREADS        Number of threads for processing the input data [default: 1]
-  --time-zone=<tz>  Specify the timezone [default: 0];
+  --time-zone=<tz>  Specify the timezone [default: 0]
 ";
 
 #[derive(Debug, Deserialize)]
@@ -218,6 +219,16 @@ fn main() {
      */
     let usage = USAGE.replace("__PROGNAME__", &env::args().nth(0).unwrap());
     let args: Args = Docopt::new(usage).and_then(|d| d.deserialize()).unwrap_or_else(|e| e.exit());
+
+    let out_dir = Path::new(&args.flag_o);
+
+    if out_dir.is_file() {
+        eprintln!("Error: output path '{}' is a file.", &args.flag_o);
+        std::process::exit(1);
+    } else if !out_dir.exists() {
+        eprintln!("Error: output directory '{}' doesn't exists.", &args.flag_o);
+        std::process::exit(1);
+    }
 
     let disp_mut = Arc::new(Mutex::new(Dispatcher::new()));
 
